@@ -9,7 +9,111 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      meals: {
+        Row: {
+          calories: number
+          created_at: string
+          id: string
+          logged_at: string
+          name: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          calories: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          name: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          name?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      water_intake: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          logged_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workouts: {
+        Row: {
+          calories_burned: number
+          created_at: string
+          duration: number
+          id: string
+          logged_at: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          calories_burned: number
+          created_at?: string
+          duration: number
+          id?: string
+          logged_at?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          calories_burned?: number
+          created_at?: string
+          duration?: number
+          id?: string
+          logged_at?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

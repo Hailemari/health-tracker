@@ -6,16 +6,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Utensils, Trash2 } from 'lucide-react';
+import { Plus, Utensils } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
-const MealLogger = ({ onAddMeal, meals }) => {
+interface Meal {
+  id: string;
+  name: string;
+  type: string;
+  calories: number;
+  timestamp: Date;
+}
+
+interface MealLoggerProps {
+  onAddMeal: (meal: { name: string; type: string; calories: number }) => Promise<void>;
+  meals: Meal[];
+}
+
+const MealLogger: React.FC<MealLoggerProps> = ({ onAddMeal, meals }) => {
   const [mealName, setMealName] = useState('');
   const [mealType, setMealType] = useState('');
   const [calories, setCalories] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!mealName || !mealType || !calories) {
@@ -27,23 +41,32 @@ const MealLogger = ({ onAddMeal, meals }) => {
       return;
     }
 
-    const meal = {
-      name: mealName,
-      type: mealType,
-      calories: parseInt(calories)
-    };
+    setLoading(true);
+    try {
+      await onAddMeal({
+        name: mealName,
+        type: mealType,
+        calories: parseInt(calories)
+      });
+      
+      // Reset form
+      setMealName('');
+      setMealType('');
+      setCalories('');
 
-    onAddMeal(meal);
-    
-    // Reset form
-    setMealName('');
-    setMealType('');
-    setCalories('');
-
-    toast({
-      title: "Meal Added!",
-      description: `${mealName} logged successfully`,
-    });
+      toast({
+        title: "Meal Added!",
+        description: `${mealName} logged successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add meal. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const mealTypes = [
@@ -53,7 +76,7 @@ const MealLogger = ({ onAddMeal, meals }) => {
     { value: 'snack', label: 'Snack', color: 'bg-purple-100 text-purple-800' }
   ];
 
-  const getMealTypeColor = (type) => {
+  const getMealTypeColor = (type: string) => {
     const mealType = mealTypes.find(mt => mt.value === type);
     return mealType ? mealType.color : 'bg-gray-100 text-gray-800';
   };
@@ -112,9 +135,9 @@ const MealLogger = ({ onAddMeal, meals }) => {
               />
             </div>
 
-            <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600">
+            <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600" disabled={loading}>
               <Plus className="w-4 h-4 mr-2" />
-              Add Meal
+              {loading ? "Adding Meal..." : "Add Meal"}
             </Button>
           </form>
         </CardContent>
