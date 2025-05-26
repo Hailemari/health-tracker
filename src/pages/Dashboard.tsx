@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Utensils, Dumbbell, Droplets, Calendar, TrendingUp, Plus, LogOut, User } from 'lucide-react';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Utensils, Dumbbell, Droplets, Calendar, TrendingUp, Plus, LogOut } from 'lucide-react';
 import MealLogger from '@/components/MealLogger';
 import WorkoutLogger from '@/components/WorkoutLogger';
 import WaterTracker from '@/components/WaterTracker';
@@ -203,6 +203,14 @@ const Dashboard = () => {
   const exerciseProgress = (totalExerciseMinutes / exerciseGoal) * 100;
   const waterProgress = (totalWaterGlasses / waterGoal) * 100;
 
+  // Get user's first letter for avatar
+  const getUserInitial = () => {
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50 flex items-center justify-center">
@@ -215,89 +223,96 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50">
       <div className="container mx-auto p-4 max-w-7xl">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">Health Tracker</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Health Tracker</h1>
             <p className="text-gray-600">Welcome back, {user?.user_metadata?.full_name || 'User'}!</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-gray-600">
-              <User className="w-5 h-5" />
-              <span>{user?.email}</span>
-            </div>
-            <Button variant="outline" onClick={handleSignOut}>
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-blue-500 text-white font-semibold">
+                {getUserInitial()}
+              </AvatarFallback>
+            </Avatar>
+            <Button variant="outline" onClick={handleSignOut} className="text-sm">
               <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              <span className="hidden sm:inline">Sign Out</span>
+              <span className="sm:hidden">Out</span>
             </Button>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 lg:w-fit mx-auto">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Dashboard
+            <TabsTrigger value="dashboard" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+              <span className="sm:hidden">Home</span>
             </TabsTrigger>
-            <TabsTrigger value="meals" className="flex items-center gap-2">
-              <Utensils className="w-4 h-4" />
-              Meals
+            <TabsTrigger value="meals" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Utensils className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Meals</span>
+              <span className="sm:hidden">Food</span>
             </TabsTrigger>
-            <TabsTrigger value="workouts" className="flex items-center gap-2">
-              <Dumbbell className="w-4 h-4" />
-              Workouts
+            <TabsTrigger value="workouts" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Dumbbell className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Workouts</span>
+              <span className="sm:hidden">Gym</span>
             </TabsTrigger>
-            <TabsTrigger value="water" className="flex items-center gap-2">
-              <Droplets className="w-4 h-4" />
-              Water
+            <TabsTrigger value="water" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Droplets className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Water</span>
+              <span className="sm:hidden">H2O</span>
             </TabsTrigger>
-            <TabsTrigger value="summary" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Summary
+            <TabsTrigger value="summary" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Summary</span>
+              <span className="sm:hidden">Sum</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2">
-                    <Utensils className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Utensils className="w-4 h-4 sm:w-5 sm:h-5" />
                     Calories Today
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold mb-2">{totalCalories}</div>
-                  <div className="text-blue-100">Goal: {caloriesGoal} cal</div>
+                  <div className="text-2xl sm:text-3xl font-bold mb-2">{totalCalories}</div>
+                  <div className="text-blue-100 text-sm">Goal: {caloriesGoal} cal</div>
                   <Progress value={calorieProgress} className="mt-3 bg-blue-400" />
                 </CardContent>
               </Card>
 
               <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2">
-                    <Dumbbell className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5" />
                     Exercise Today
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold mb-2">{totalExerciseMinutes}m</div>
-                  <div className="text-emerald-100">Goal: {exerciseGoal} min</div>
+                  <div className="text-2xl sm:text-3xl font-bold mb-2">{totalExerciseMinutes}m</div>
+                  <div className="text-emerald-100 text-sm">Goal: {exerciseGoal} min</div>
                   <Progress value={exerciseProgress} className="mt-3 bg-emerald-400" />
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-cyan-500 to-cyan-600 text-white">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-cyan-500 to-cyan-600 text-white sm:col-span-2 lg:col-span-1">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2">
-                    <Droplets className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Droplets className="w-4 h-4 sm:w-5 sm:h-5" />
                     Water Today
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold mb-2">{totalWaterGlasses}/{waterGoal}</div>
-                  <div className="text-cyan-100">glasses</div>
+                  <div className="text-2xl sm:text-3xl font-bold mb-2">{totalWaterGlasses}/{waterGoal}</div>
+                  <div className="text-cyan-100 text-sm">glasses</div>
                   <Progress value={waterProgress} className="mt-3 bg-cyan-400" />
                 </CardContent>
               </Card>
@@ -307,21 +322,21 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle>Recent Meals</CardTitle>
-                  <CardDescription>Your latest food entries</CardDescription>
+                  <CardTitle className="text-base sm:text-lg">Recent Meals</CardTitle>
+                  <CardDescription className="text-sm">Your latest food entries</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {meals.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No meals logged today</p>
+                    <p className="text-gray-500 text-center py-4 text-sm">No meals logged today</p>
                   ) : (
                     <div className="space-y-3">
                       {meals.slice(0, 3).map((meal) => (
                         <div key={meal.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                           <div>
-                            <div className="font-medium">{meal.name}</div>
-                            <div className="text-sm text-gray-500">{meal.type}</div>
+                            <div className="font-medium text-sm sm:text-base">{meal.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-500">{meal.type}</div>
                           </div>
-                          <Badge variant="secondary">{meal.calories} cal</Badge>
+                          <Badge variant="secondary" className="text-xs">{meal.calories} cal</Badge>
                         </div>
                       ))}
                     </div>
@@ -331,21 +346,21 @@ const Dashboard = () => {
 
               <Card className="border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle>Recent Workouts</CardTitle>
-                  <CardDescription>Your latest exercise sessions</CardDescription>
+                  <CardTitle className="text-base sm:text-lg">Recent Workouts</CardTitle>
+                  <CardDescription className="text-sm">Your latest exercise sessions</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {workouts.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No workouts logged today</p>
+                    <p className="text-gray-500 text-center py-4 text-sm">No workouts logged today</p>
                   ) : (
                     <div className="space-y-3">
                       {workouts.slice(0, 3).map((workout) => (
                         <div key={workout.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                           <div>
-                            <div className="font-medium">{workout.type}</div>
-                            <div className="text-sm text-gray-500">{workout.calories_burned} cal burned</div>
+                            <div className="font-medium text-sm sm:text-base">{workout.type}</div>
+                            <div className="text-xs sm:text-sm text-gray-500">{workout.calories_burned} cal burned</div>
                           </div>
-                          <Badge variant="secondary">{workout.duration}m</Badge>
+                          <Badge variant="secondary" className="text-xs">{workout.duration}m</Badge>
                         </div>
                       ))}
                     </div>
@@ -357,59 +372,33 @@ const Dashboard = () => {
             {/* Quick Actions */}
             <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Add new entries quickly</CardDescription>
+                <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
+                <CardDescription className="text-sm">Add new entries quickly</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-3">
                 <Button 
                   onClick={() => setActiveTab('meals')}
-                  className="bg-blue-500 hover:bg-blue-600"
+                  className="bg-blue-500 hover:bg-blue-600 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Log Meal
                 </Button>
                 <Button 
                   onClick={() => setActiveTab('workouts')}
-                  className="bg-emerald-500 hover:bg-emerald-600"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Log Workout
                 </Button>
                 <Button 
                   onClick={() => addWater(1)}
-                  className="bg-cyan-500 hover:bg-cyan-600"
+                  className="bg-cyan-500 hover:bg-cyan-600 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Add Water
                 </Button>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Meals Tab */}
-          <TabsContent value="meals">
-            <MealLogger onAddMeal={addMeal} meals={meals.map(meal => ({
-              ...meal,
-              timestamp: new Date(meal.logged_at)
-            }))} />
-          </TabsContent>
-
-          {/* Workouts Tab */}
-          <TabsContent value="workouts">
-            <WorkoutLogger onAddWorkout={addWorkout} workouts={workouts.map(workout => ({
-              ...workout,
-              exercise: workout.type,
-              timestamp: new Date(workout.logged_at)
-            }))} />
-          </TabsContent>
-
-          {/* Water Tab */}
-          <TabsContent value="water">
-            <WaterTracker 
-              waterIntake={totalWaterGlasses}
-              waterGoal={waterGoal}
-              onAddWater={addWater}
-            />
           </TabsContent>
 
           {/* Summary Tab */}
@@ -432,8 +421,36 @@ const Dashboard = () => {
               exerciseGoal
             }} />
             <div className="mt-6">
-              <ProgressCharts />
+              <ProgressCharts 
+                meals={meals}
+                workouts={workouts}
+                waterIntakes={waterIntakes}
+              />
             </div>
+          </TabsContent>
+
+          {/* Other tabs remain the same */}
+          <TabsContent value="meals">
+            <MealLogger onAddMeal={addMeal} meals={meals.map(meal => ({
+              ...meal,
+              timestamp: new Date(meal.logged_at)
+            }))} />
+          </TabsContent>
+
+          <TabsContent value="workouts">
+            <WorkoutLogger onAddWorkout={addWorkout} workouts={workouts.map(workout => ({
+              ...workout,
+              exercise: workout.type,
+              timestamp: new Date(workout.logged_at)
+            }))} />
+          </TabsContent>
+
+          <TabsContent value="water">
+            <WaterTracker 
+              waterIntake={totalWaterGlasses}
+              waterGoal={waterGoal}
+              onAddWater={addWater}
+            />
           </TabsContent>
         </Tabs>
       </div>

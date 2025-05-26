@@ -1,65 +1,234 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Utensils, Dumbbell, Droplets, Calendar, TrendingUp, Plus } from 'lucide-react';
+import { Utensils, Dumbbell, Droplets, Calendar, TrendingUp, Plus, LogOut, User } from 'lucide-react';
 import MealLogger from '@/components/MealLogger';
 import WorkoutLogger from '@/components/WorkoutLogger';
 import WaterTracker from '@/components/WaterTracker';
 import ProgressCharts from '@/components/ProgressCharts';
 import DailySummary from '@/components/DailySummary';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
-const Index = () => {
-  const [todayData, setTodayData] = useState({
-    meals: [],
-    workouts: [],
-    waterIntake: 0,
-    waterGoal: 8,
-    caloriesConsumed: 0,
-    caloriesGoal: 2000,
-    exerciseMinutes: 0,
-    exerciseGoal: 30
-  });
+interface Meal {
+  id: string;
+  name: string;
+  type: string;
+  calories: number;
+  logged_at: string;
+}
 
+interface Workout {
+  id: string;
+  type: string;
+  duration: number;
+  calories_burned: number;
+  logged_at: string;
+}
+
+interface WaterIntake {
+  id: string;
+  amount: number;
+  logged_at: string;
+}
+
+const Dashboard = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [waterIntakes, setWaterIntakes] = useState<WaterIntake[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addMeal = (meal) => {
-    setTodayData(prev => ({
-      ...prev,
-      meals: [...prev.meals, { ...meal, id: Date.now(), timestamp: new Date() }],
-      caloriesConsumed: prev.caloriesConsumed + meal.calories
-    }));
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    loadTodayData();
+  }, [user, navigate]);
+
+  const loadTodayData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const [mealsData, workoutsData, waterData] = await Promise.all([
+        supabase
+          .from('meals')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('logged_at', todayStart.toISOString())
+          .lte('logged_at', todayEnd.toISOString())
+          .order('logged_at', { ascending: false }),
+        
+        supabase
+          .from('workouts')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('logged_at', todayStart.toISOString())
+          .lte('logged_at', todayEnd.toISOString())
+          .order('logged_at', { ascending: false }),
+        
+        supabase
+          .from('water_intake')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('logged_at', todayStart.toISOString())
+          .lte('logged_at', todayEnd.toISOString())
+          .order('logged_at', { ascending: false })
+      ]);
+
+      if (mealsData.data) setMeals(mealsData.data);
+      if (workoutsData.data) setWorkouts(workoutsData.data);
+      if (waterData.data) setWaterIntakes(waterData.data);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addWorkout = (workout) => {
-    setTodayData(prev => ({
-      ...prev,
-      workouts: [...prev.workouts, { ...workout, id: Date.now(), timestamp: new Date() }],
-      exerciseMinutes: prev.exerciseMinutes + workout.duration
-    }));
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
-  const addWater = (amount) => {
-    setTodayData(prev => ({
-      ...prev,
-      waterIntake: Math.min(prev.waterIntake + amount, prev.waterGoal)
-    }));
+  const addMeal = async (mealData: { name: string; type: string; calories: number }) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('meals')
+        .insert([
+          {
+            user_id: user.id,
+            name: mealData.name,
+            type: mealData.type,
+            calories: mealData.calories,
+            logged_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setMeals(prev => [data, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding meal:', error);
+    }
   };
 
-  const waterProgress = (todayData.waterIntake / todayData.waterGoal) * 100;
-  const calorieProgress = (todayData.caloriesConsumed / todayData.caloriesGoal) * 100;
-  const exerciseProgress = (todayData.exerciseMinutes / todayData.exerciseGoal) * 100;
+  const addWorkout = async (workoutData: { type: string; duration: number; calories_burned: number }) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('workouts')
+        .insert([
+          {
+            user_id: user.id,
+            type: workoutData.type,
+            duration: workoutData.duration,
+            calories_burned: workoutData.calories_burned,
+            logged_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setWorkouts(prev => [data, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding workout:', error);
+    }
+  };
+
+  const addWater = async (amount: number) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .insert([
+          {
+            user_id: user.id,
+            amount: amount * 250, // Convert glasses to ml
+            logged_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setWaterIntakes(prev => [data, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding water intake:', error);
+    }
+  };
+
+  // Calculate totals
+  const totalCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
+  const totalExerciseMinutes = workouts.reduce((sum, workout) => sum + workout.duration, 0);
+  const totalWaterGlasses = Math.floor(waterIntakes.reduce((sum, water) => sum + water.amount, 0) / 250);
+
+  const caloriesGoal = 2000;
+  const exerciseGoal = 30;
+  const waterGoal = 8;
+
+  const calorieProgress = (totalCalories / caloriesGoal) * 100;
+  const exerciseProgress = (totalExerciseMinutes / exerciseGoal) * 100;
+  const waterProgress = (totalWaterGlasses / waterGoal) * 100;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading your health data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50">
       <div className="container mx-auto p-4 max-w-7xl">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Health Tracker</h1>
-          <p className="text-gray-600">Track your daily wellness journey</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">Health Tracker</h1>
+            <p className="text-gray-600">Welcome back, {user?.user_metadata?.full_name || 'User'}!</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-gray-600">
+              <User className="w-5 h-5" />
+              <span>{user?.email}</span>
+            </div>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -98,12 +267,8 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold mb-2">
-                    {todayData.caloriesConsumed}
-                  </div>
-                  <div className="text-blue-100">
-                    Goal: {todayData.caloriesGoal} cal
-                  </div>
+                  <div className="text-3xl font-bold mb-2">{totalCalories}</div>
+                  <div className="text-blue-100">Goal: {caloriesGoal} cal</div>
                   <Progress value={calorieProgress} className="mt-3 bg-blue-400" />
                 </CardContent>
               </Card>
@@ -116,12 +281,8 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold mb-2">
-                    {todayData.exerciseMinutes}m
-                  </div>
-                  <div className="text-emerald-100">
-                    Goal: {todayData.exerciseGoal} min
-                  </div>
+                  <div className="text-3xl font-bold mb-2">{totalExerciseMinutes}m</div>
+                  <div className="text-emerald-100">Goal: {exerciseGoal} min</div>
                   <Progress value={exerciseProgress} className="mt-3 bg-emerald-400" />
                 </CardContent>
               </Card>
@@ -134,12 +295,8 @@ const Index = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold mb-2">
-                    {todayData.waterIntake}/{todayData.waterGoal}
-                  </div>
-                  <div className="text-cyan-100">
-                    glasses
-                  </div>
+                  <div className="text-3xl font-bold mb-2">{totalWaterGlasses}/{waterGoal}</div>
+                  <div className="text-cyan-100">glasses</div>
                   <Progress value={waterProgress} className="mt-3 bg-cyan-400" />
                 </CardContent>
               </Card>
@@ -153,11 +310,11 @@ const Index = () => {
                   <CardDescription>Your latest food entries</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {todayData.meals.length === 0 ? (
+                  {meals.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">No meals logged today</p>
                   ) : (
                     <div className="space-y-3">
-                      {todayData.meals.slice(-3).map((meal) => (
+                      {meals.slice(0, 3).map((meal) => (
                         <div key={meal.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                           <div>
                             <div className="font-medium">{meal.name}</div>
@@ -177,15 +334,15 @@ const Index = () => {
                   <CardDescription>Your latest exercise sessions</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {todayData.workouts.length === 0 ? (
+                  {workouts.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">No workouts logged today</p>
                   ) : (
                     <div className="space-y-3">
-                      {todayData.workouts.slice(-3).map((workout) => (
+                      {workouts.slice(0, 3).map((workout) => (
                         <div key={workout.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                           <div>
-                            <div className="font-medium">{workout.exercise}</div>
-                            <div className="text-sm text-gray-500">{workout.type}</div>
+                            <div className="font-medium">{workout.type}</div>
+                            <div className="text-sm text-gray-500">{workout.calories_burned} cal burned</div>
                           </div>
                           <Badge variant="secondary">{workout.duration}m</Badge>
                         </div>
@@ -230,26 +387,49 @@ const Index = () => {
 
           {/* Meals Tab */}
           <TabsContent value="meals">
-            <MealLogger onAddMeal={addMeal} meals={todayData.meals} />
+            <MealLogger onAddMeal={addMeal} meals={meals.map(meal => ({
+              ...meal,
+              timestamp: new Date(meal.logged_at)
+            }))} />
           </TabsContent>
 
           {/* Workouts Tab */}
           <TabsContent value="workouts">
-            <WorkoutLogger onAddWorkout={addWorkout} workouts={todayData.workouts} />
+            <WorkoutLogger onAddWorkout={addWorkout} workouts={workouts.map(workout => ({
+              ...workout,
+              exercise: workout.type,
+              timestamp: new Date(workout.logged_at)
+            }))} />
           </TabsContent>
 
           {/* Water Tab */}
           <TabsContent value="water">
             <WaterTracker 
-              waterIntake={todayData.waterIntake}
-              waterGoal={todayData.waterGoal}
+              waterIntake={totalWaterGlasses}
+              waterGoal={waterGoal}
               onAddWater={addWater}
             />
           </TabsContent>
 
           {/* Summary Tab */}
           <TabsContent value="summary">
-            <DailySummary todayData={todayData} />
+            <DailySummary todayData={{
+              meals: meals.map(meal => ({
+                ...meal,
+                timestamp: new Date(meal.logged_at)
+              })),
+              workouts: workouts.map(workout => ({
+                ...workout,
+                exercise: workout.type,
+                timestamp: new Date(workout.logged_at)
+              })),
+              waterIntake: totalWaterGlasses,
+              waterGoal,
+              caloriesConsumed: totalCalories,
+              caloriesGoal,
+              exerciseMinutes: totalExerciseMinutes,
+              exerciseGoal
+            }} />
             <div className="mt-6">
               <ProgressCharts />
             </div>
@@ -260,4 +440,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Dashboard;
