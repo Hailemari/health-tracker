@@ -198,7 +198,7 @@ const Landing = () => {
           </div>
           <p className="text-gray-400 mb-6">Transform your health, one day at a time.</p>
           <div className="flex justify-center gap-6 text-sm text-gray-400">
-            <span>© 2024 HealthTracker. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} HealthTracker. All rights reserved.</span>
           </div>
         </div>
       </footer>
