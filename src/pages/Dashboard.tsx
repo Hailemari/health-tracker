@@ -155,7 +155,7 @@ const Dashboard = () => {
     meals: transformedMeals,
     workouts: workouts.filter(workout => new Date(workout.logged_at).toDateString() === today),
     waterIntake: todayWaterIntake,
-    waterGoal: 2000,
+    waterGoal: 2000, // 2000ml = 8 glasses
     caloriesConsumed: transformedMeals.reduce((sum, meal) => sum + meal.calories, 0),
     caloriesGoal: 2000,
     exerciseMinutes: workouts

@@ -9,17 +9,22 @@ import { useToast } from "@/hooks/use-toast";
 const WaterTracker = ({ waterIntake, waterGoal, onAddWater }) => {
   const { toast } = useToast();
   
-  const waterProgress = (waterIntake / waterGoal) * 100;
+  // Convert ml to glasses (assuming 250ml per glass)
+  const waterIntakeGlasses = Math.round(waterIntake / 250);
+  const waterGoalGlasses = Math.round(waterGoal / 250);
   
-  const addWater = (amount) => {
-    onAddWater(amount);
-    if (amount > 0) {
+  const waterProgress = (waterIntakeGlasses / waterGoalGlasses) * 100;
+  
+  const addWater = (glasses) => {
+    const mlAmount = glasses * 250; // Convert glasses to ml
+    onAddWater(mlAmount);
+    if (glasses > 0) {
       toast({
         title: "Water Added!",
-        description: `Added ${amount} glass${amount > 1 ? 'es' : ''} of water`,
+        description: `Added ${glasses} glass${glasses > 1 ? 'es' : ''} of water`,
       });
       
-      if (waterIntake + amount >= waterGoal) {
+      if (waterIntakeGlasses + glasses >= waterGoalGlasses) {
         toast({
           title: "Goal Achieved! 🎉",
           description: "You've reached your daily water goal!",
@@ -29,8 +34,9 @@ const WaterTracker = ({ waterIntake, waterGoal, onAddWater }) => {
   };
 
   const removeWater = () => {
-    if (waterIntake > 0) {
-      onAddWater(-1);
+    if (waterIntakeGlasses > 0) {
+      const mlAmount = -250; // Remove one glass (250ml)
+      onAddWater(mlAmount);
       toast({
         title: "Water Removed",
         description: "Removed 1 glass of water",
@@ -39,7 +45,7 @@ const WaterTracker = ({ waterIntake, waterGoal, onAddWater }) => {
   };
 
   const getWaterLevel = () => {
-    const percentage = Math.min((waterIntake / waterGoal) * 100, 100);
+    const percentage = Math.min((waterIntakeGlasses / waterGoalGlasses) * 100, 100);
     return percentage;
   };
 
@@ -104,7 +110,7 @@ const WaterTracker = ({ waterIntake, waterGoal, onAddWater }) => {
                   />
                   
                   {/* Water surface animation */}
-                  {waterIntake > 0 && (
+                  {waterIntakeGlasses > 0 && (
                     <ellipse
                       cx="60"
                       cy={172 - (getWaterLevel() / 100) * 130}
@@ -126,7 +132,7 @@ const WaterTracker = ({ waterIntake, waterGoal, onAddWater }) => {
           {/* Progress Info */}
           <div className="text-center mb-6">
             <div className="text-3xl font-bold text-gray-900 mb-2">
-              {waterIntake} / {waterGoal}
+              {waterIntakeGlasses} / {waterGoalGlasses}
             </div>
             <div className="text-gray-600 mb-4">glasses of water</div>
             
@@ -147,7 +153,7 @@ const WaterTracker = ({ waterIntake, waterGoal, onAddWater }) => {
               variant="outline"
               size="lg"
               onClick={removeWater}
-              disabled={waterIntake === 0}
+              disabled={waterIntakeGlasses === 0}
               className="hover:bg-red-50 hover:border-red-300"
             >
               <Minus className="w-5 h-5" />
