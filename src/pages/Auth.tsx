@@ -99,10 +99,10 @@ const Auth = () => {
     try {
       await signUp(signupForm.email, signupForm.password, signupForm.fullName);
       toast({
-        title: "Account Created!",
+        title: "PLEASE CONFIRM YOUR EMAIL!",
         description: "Welcome to HealthTracker! You can now start tracking your wellness journey.",
       });
-      navigate('/dashboard');
+      navigate('/auth');
     } catch (error: any) {
       toast({
         title: "Sign Up Failed",
