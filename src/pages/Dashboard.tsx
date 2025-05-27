@@ -3,7 +3,8 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, TrendingUp } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, TrendingUp, Utensils, Dumbbell, Droplets, BarChart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MealLogger from '@/components/MealLogger';
 import WorkoutLogger from '@/components/WorkoutLogger';
@@ -78,9 +79,7 @@ const Dashboard = () => {
         user_id: user.id,
         name: mealData.name,
         calories: mealData.calories,
-        protein: mealData.protein,
-        carbs: mealData.carbs,
-        fat: mealData.fat,
+        type: mealData.type || 'Other',
         logged_at: new Date().toISOString()
       });
 
@@ -96,7 +95,7 @@ const Dashboard = () => {
       .from('workouts')
       .insert({
         user_id: user.id,
-        exercise: workoutData.exercise,
+        type: workoutData.type,
         duration: workoutData.duration,
         calories_burned: workoutData.calories_burned,
         logged_at: new Date().toISOString()
@@ -175,32 +174,60 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Loggers */}
-          <div className="lg:col-span-2 space-y-6">
+      {/* Main Content with Tabs */}
+      <main className="container mx-auto px-4 py-6">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="overview" className="flex items-center gap-1 text-xs sm:text-sm">
+              <TrendingUp className="w-4 h-4" />
+              <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="meals" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Utensils className="w-4 h-4" />
+              <span className="hidden sm:inline">Meals</span>
+            </TabsTrigger>
+            <TabsTrigger value="workouts" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Dumbbell className="w-4 h-4" />
+              <span className="hidden sm:inline">Workouts</span>
+            </TabsTrigger>
+            <TabsTrigger value="water" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Droplets className="w-4 h-4" />
+              <span className="hidden sm:inline">Water</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-1 text-xs sm:text-sm">
+              <BarChart className="w-4 h-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <DailySummary todayData={todayData} />
+          </TabsContent>
+
+          <TabsContent value="meals">
             <MealLogger onAddMeal={handleAddMeal} meals={meals} />
+          </TabsContent>
+
+          <TabsContent value="workouts">
             <WorkoutLogger onAddWorkout={handleAddWorkout} workouts={workouts} />
+          </TabsContent>
+
+          <TabsContent value="water">
             <WaterTracker 
               waterIntake={todayWaterIntake} 
               waterGoal={2000} 
               onAddWater={handleAddWater} 
             />
-          </div>
+          </TabsContent>
 
-          {/* Right Column - Summary */}
-          <div className="space-y-6">
-            <DailySummary todayData={todayData} />
-          </div>
-        </div>
-
-        {/* Charts Section */}
-        <ProgressCharts 
-          meals={meals}
-          workouts={workouts}
-          waterIntakes={waterIntakes}
-        />
+          <TabsContent value="analytics">
+            <ProgressCharts 
+              meals={meals}
+              workouts={workouts}
+              waterIntakes={waterIntakes}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
