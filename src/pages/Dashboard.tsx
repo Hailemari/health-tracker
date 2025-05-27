@@ -142,11 +142,26 @@ const Dashboard = () => {
     .filter(intake => new Date(intake.logged_at).toDateString() === today)
     .reduce((total, intake) => total + intake.amount, 0);
 
+  // Transform meals data to include timestamp property for MealLogger compatibility
+  const transformedMeals = meals
+    .filter(meal => new Date(meal.logged_at).toDateString() === today)
+    .map(meal => ({
+      ...meal,
+      timestamp: new Date(meal.logged_at)
+    }));
+
   // Prepare today's data for DailySummary
   const todayData = {
-    meals: meals.filter(meal => new Date(meal.logged_at).toDateString() === today),
+    meals: transformedMeals,
     workouts: workouts.filter(workout => new Date(workout.logged_at).toDateString() === today),
-    waterIntake: todayWaterIntake
+    waterIntake: todayWaterIntake,
+    waterGoal: 2000,
+    caloriesConsumed: transformedMeals.reduce((sum, meal) => sum + meal.calories, 0),
+    caloriesGoal: 2000,
+    exerciseMinutes: workouts
+      .filter(workout => new Date(workout.logged_at).toDateString() === today)
+      .reduce((sum, workout) => sum + workout.duration, 0),
+    exerciseGoal: 60
   };
 
   return (
@@ -205,7 +220,7 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="meals">
-            <MealLogger onAddMeal={handleAddMeal} meals={meals} />
+            <MealLogger onAddMeal={handleAddMeal} meals={transformedMeals} />
           </TabsContent>
 
           <TabsContent value="workouts">
