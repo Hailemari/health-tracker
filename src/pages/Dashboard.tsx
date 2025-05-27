@@ -10,12 +10,13 @@ import WorkoutLogger from '@/components/WorkoutLogger';
 import WaterTracker from '@/components/WaterTracker';
 import ProgressCharts from '@/components/ProgressCharts';
 import DailySummary from '@/components/DailySummary';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Fetch user's meals
   const { data: meals = [] } = useQuery({
@@ -68,6 +69,60 @@ const Dashboard = () => {
     enabled: !!user?.id,
   });
 
+  const handleAddMeal = async (mealData: any) => {
+    if (!user?.id) return;
+    
+    const { error } = await supabase
+      .from('meals')
+      .insert({
+        user_id: user.id,
+        name: mealData.name,
+        calories: mealData.calories,
+        protein: mealData.protein,
+        carbs: mealData.carbs,
+        fat: mealData.fat,
+        logged_at: new Date().toISOString()
+      });
+
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['meals', user.id] });
+    }
+  };
+
+  const handleAddWorkout = async (workoutData: any) => {
+    if (!user?.id) return;
+    
+    const { error } = await supabase
+      .from('workouts')
+      .insert({
+        user_id: user.id,
+        exercise: workoutData.exercise,
+        duration: workoutData.duration,
+        calories_burned: workoutData.calories_burned,
+        logged_at: new Date().toISOString()
+      });
+
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['workouts', user.id] });
+    }
+  };
+
+  const handleAddWater = async (amount: number) => {
+    if (!user?.id) return;
+    
+    const { error } = await supabase
+      .from('water_intake')
+      .insert({
+        user_id: user.id,
+        amount: amount,
+        logged_at: new Date().toISOString()
+      });
+
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['water_intake', user.id] });
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -81,6 +136,19 @@ const Dashboard = () => {
     navigate('/auth');
     return null;
   }
+
+  // Calculate today's water intake
+  const today = new Date().toDateString();
+  const todayWaterIntake = waterIntakes
+    .filter(intake => new Date(intake.logged_at).toDateString() === today)
+    .reduce((total, intake) => total + intake.amount, 0);
+
+  // Prepare today's data for DailySummary
+  const todayData = {
+    meals: meals.filter(meal => new Date(meal.logged_at).toDateString() === today),
+    workouts: workouts.filter(workout => new Date(workout.logged_at).toDateString() === today),
+    waterIntake: todayWaterIntake
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50">
@@ -112,14 +180,18 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Loggers */}
           <div className="lg:col-span-2 space-y-6">
-            <MealLogger />
-            <WorkoutLogger />
-            <WaterTracker />
+            <MealLogger onAddMeal={handleAddMeal} meals={meals} />
+            <WorkoutLogger onAddWorkout={handleAddWorkout} workouts={workouts} />
+            <WaterTracker 
+              waterIntake={todayWaterIntake} 
+              waterGoal={2000} 
+              onAddWater={handleAddWater} 
+            />
           </div>
 
           {/* Right Column - Summary */}
           <div className="space-y-6">
-            <DailySummary />
+            <DailySummary todayData={todayData} />
           </div>
         </div>
 
