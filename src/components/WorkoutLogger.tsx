@@ -29,12 +29,13 @@ const WorkoutLogger = ({ onAddWorkout, workouts }) => {
     }
 
     const workout = {
-      exercise,
-      type: workoutType,
+      exercise, // This is used for display purposes only
+      type: workoutType, // This matches the database schema
       duration: parseInt(duration),
-      intensity
+      intensity // This is used for calorie calculation
     };
 
+    console.log('Submitting workout:', workout); // Debug log
     onAddWorkout(workout);
     
     // Reset form
@@ -184,14 +185,14 @@ const WorkoutLogger = ({ onAddWorkout, workouts }) => {
                     <div className="flex-1">
                       <div className="font-medium text-gray-900 flex items-center gap-2">
                         <span>{typeInfo.icon}</span>
-                        {workout.exercise}
+                        {workout.exercise || `${workout.type.charAt(0).toUpperCase() + workout.type.slice(1)} Workout`}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge className={typeInfo.color}>
                           {workout.type}
                         </Badge>
-                        <Badge className={getIntensityColor(workout.intensity)}>
-                          {workout.intensity} intensity
+                        <Badge className={getIntensityColor(workout.intensity || 'medium')}>
+                          {workout.intensity || 'medium'} intensity
                         </Badge>
                         <span className="text-sm text-gray-500">
                           {workout.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -200,6 +201,9 @@ const WorkoutLogger = ({ onAddWorkout, workouts }) => {
                     </div>
                     <div className="text-right">
                       <div className="font-semibold text-gray-900">{workout.duration}m</div>
+                      {workout.calories_burned && (
+                        <div className="text-sm text-gray-500">{workout.calories_burned} cal</div>
+                      )}
                     </div>
                   </div>
                 );

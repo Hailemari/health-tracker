@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
@@ -91,17 +90,46 @@ const Dashboard = () => {
   const handleAddWorkout = async (workoutData: any) => {
     if (!user?.id) return;
     
+    console.log('Adding workout:', workoutData); // Debug log
+    
+    // Calculate estimated calories burned based on workout type and duration
+    const getCaloriesBurned = (type: string, duration: number, intensity: string) => {
+      const baseCaloriesPerMinute = {
+        'cardio': 8,
+        'strength': 6,
+        'flexibility': 3,
+        'sports': 7,
+        'other': 5
+      };
+      
+      const intensityMultiplier = {
+        'low': 0.7,
+        'medium': 1.0,
+        'high': 1.3
+      };
+      
+      const baseRate = baseCaloriesPerMinute[type as keyof typeof baseCaloriesPerMinute] || 5;
+      const multiplier = intensityMultiplier[intensity as keyof typeof intensityMultiplier] || 1.0;
+      
+      return Math.round(baseRate * duration * multiplier);
+    };
+
+    const calories_burned = getCaloriesBurned(workoutData.type, workoutData.duration, workoutData.intensity);
+    
     const { error } = await supabase
       .from('workouts')
       .insert({
         user_id: user.id,
         type: workoutData.type,
         duration: workoutData.duration,
-        calories_burned: workoutData.calories_burned,
+        calories_burned: calories_burned,
         logged_at: new Date().toISOString()
       });
 
-    if (!error) {
+    if (error) {
+      console.error('Error adding workout:', error);
+    } else {
+      console.log('Workout added successfully');
       queryClient.invalidateQueries({ queryKey: ['workouts', user.id] });
     }
   };
@@ -150,17 +178,25 @@ const Dashboard = () => {
       timestamp: new Date(meal.logged_at)
     }));
 
+  // Transform workouts data to include timestamp and exercise name for WorkoutLogger compatibility
+  const transformedWorkouts = workouts
+    .filter(workout => new Date(workout.logged_at).toDateString() === today)
+    .map(workout => ({
+      ...workout,
+      timestamp: new Date(workout.logged_at),
+      exercise: `${workout.type.charAt(0).toUpperCase() + workout.type.slice(1)} Workout`, // Generate exercise name from type
+      intensity: 'medium' // Default intensity since it's not stored in DB
+    }));
+
   // Prepare today's data for DailySummary
   const todayData = {
     meals: transformedMeals,
-    workouts: workouts.filter(workout => new Date(workout.logged_at).toDateString() === today),
+    workouts: transformedWorkouts,
     waterIntake: todayWaterIntake,
     waterGoal: 2000, // 2000ml = 8 glasses
     caloriesConsumed: transformedMeals.reduce((sum, meal) => sum + meal.calories, 0),
     caloriesGoal: 2000,
-    exerciseMinutes: workouts
-      .filter(workout => new Date(workout.logged_at).toDateString() === today)
-      .reduce((sum, workout) => sum + workout.duration, 0),
+    exerciseMinutes: transformedWorkouts.reduce((sum, workout) => sum + workout.duration, 0),
     exerciseGoal: 60
   };
 
@@ -224,7 +260,7 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="workouts">
-            <WorkoutLogger onAddWorkout={handleAddWorkout} workouts={workouts} />
+            <WorkoutLogger onAddWorkout={handleAddWorkout} workouts={transformedWorkouts} />
           </TabsContent>
 
           <TabsContent value="water">
